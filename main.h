@@ -10,6 +10,7 @@
 
 #include <cstdio>
 #include <allegro5/allegro.h>
+#include <allegro5/allegro_font.h>
 
 #define LOG_FILE  stderr
 #define LOG(_str) fprintf(LOG_FILE, "%s\n", _str)
@@ -20,5 +21,7 @@
 const float FPS = 60;
 const int SCREEN_W = 640;
 const int SCREEN_H = 480;
+
+extern ALLEGRO_FONT *font;
 
 #endif /* MAIN_H_ */

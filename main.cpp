@@ -3,6 +3,8 @@
 #include <cstdlib>
 #include <allegro5/allegro.h>
 #include <allegro5/allegro_primitives.h>
+#include <allegro5/allegro_font.h>
+#include <allegro5/allegro_ttf.h>
 #include <stack>
 
 #include "main.h"
@@ -10,6 +12,10 @@
 #include "Entity.h"
 
 using namespace std;
+
+ALLEGRO_FONT *font = NULL;
+
+#define BOUNCER_SPEED 4
 
 // Starts allegro, mouse, keyboard, display, event_queue and FPS timer.
 static int init(
@@ -105,6 +111,15 @@ static int init(ALLEGRO_DISPLAY **display, ALLEGRO_EVENT_QUEUE **event_queue,
 		return 0;
 	}
 
+	al_init_font_addon(); // initialize the font addon
+	al_init_ttf_addon();// initialize the ttf (True Type Font) addon
+	// Load font
+	font = al_load_ttf_font("pirulen.ttf",14,0 );
+    if (font == NULL){
+		fprintf(stderr, "Could not load 'pirulen.ttf'.\n");
+		return 0;
+	}
+
 	// Register display events
 	al_register_event_source(*event_queue,
 			al_get_display_event_source(*display));
@@ -145,12 +160,12 @@ static void run_loop(ALLEGRO_DISPLAY *display, ALLEGRO_EVENT_QUEUE *event_queue,
 	Vector curr;
 
 	for (int i = 0; i < 10; i++) {
-		Vector s(0, 0);
+		Vector s;
 		s.x = rand() % (SCREEN_W - BOUNCER_SIZE);
 		s.y = rand() % (SCREEN_H - BOUNCER_SIZE);
 		Bouncer *b = new Bouncer(bouncer_img, s);
-		b->v.x = (1/2 - (float)rand()/(float)RAND_MAX) * 2; //Random speed between -4 and 4
-		b->v.y = (1/2 - (float)rand()/(float)RAND_MAX) * 2;
+		b->v.x = (1/2 - (float)rand()/(float)RAND_MAX) * BOUNCER_SPEED; //Random speed between -4 and 4
+		b->v.y = (1/2 - (float)rand()/(float)RAND_MAX) * BOUNCER_SPEED;
 		Entity::ents.push_back(b);
 	}
 
@@ -159,6 +174,7 @@ static void run_loop(ALLEGRO_DISPLAY *display, ALLEGRO_EVENT_QUEUE *event_queue,
 		ALLEGRO_EVENT ev;
 		al_wait_for_event(event_queue, &ev);
 
+		
 		// Every tick
 		if (ev.type == ALLEGRO_EVENT_TIMER) {
 			redraw = true;
@@ -169,7 +185,7 @@ static void run_loop(ALLEGRO_DISPLAY *display, ALLEGRO_EVENT_QUEUE *event_queue,
 		}
 
 		// Close button
-		else if (ev.type == ALLEGRO_EVENT_DISPLAY_CLOSE) {
+		if (ev.type == ALLEGRO_EVENT_DISPLAY_CLOSE) {
 			break; // Prevents another frame being rendered.
 		}
 
@@ -186,6 +202,23 @@ static void run_loop(ALLEGRO_DISPLAY *display, ALLEGRO_EVENT_QUEUE *event_queue,
 		// Key press
 		else if (ev.type == ALLEGRO_EVENT_KEY_DOWN) {
 			keys[ev.keyboard.keycode] = true;
+			
+			if (ev.keyboard.keycode == ALLEGRO_KEY_PAD_PLUS) {
+				Vector s;
+				s.x = rand() % (SCREEN_W - BOUNCER_SIZE);
+				s.y = rand() % (SCREEN_H - BOUNCER_SIZE);
+				Bouncer *b = new Bouncer(bouncer_img, s);
+				b->v.x = (1/2 - (float)rand()/(float)RAND_MAX) * BOUNCER_SPEED; //Random speed between -4 and 4
+				b->v.y = (1/2 - (float)rand()/(float)RAND_MAX) * BOUNCER_SPEED;
+				Entity::ents.push_back(b);
+			}
+			
+			else if (ev.keyboard.keycode == ALLEGRO_KEY_PAD_MINUS) {
+				Entity *e = Entity::ents.back();
+				Entity::ents.pop_back();
+				delete e;
+			}
+			
 		} else if (ev.type == ALLEGRO_EVENT_KEY_UP) {
 			keys[ev.keyboard.keycode] = false;
 		}
@@ -200,7 +233,9 @@ static void run_loop(ALLEGRO_DISPLAY *display, ALLEGRO_EVENT_QUEUE *event_queue,
 				al_draw_bitmap(e->sprite, e->s.x - e->width/2, e->s.y - e->height/2, 0);
 			}
 
+			//cout << "New Hull" << endl;
 			std::stack<Vector> convex(Entity::convexHull());
+			
 			prev = convex.top();
 			convex.pop();
 			curr = convex.top();
@@ -211,7 +246,7 @@ static void run_loop(ALLEGRO_DISPLAY *display, ALLEGRO_EVENT_QUEUE *event_queue,
 				curr = convex.top();
 				convex.pop();
 			} while (!convex.empty());
-
+		
 			al_flip_display();
 		}
 	}

@@ -10,6 +10,10 @@
 #include <cmath>
 #include <cassert>
 #include <iostream>
+#include <allegro5/allegro_font.h>
+#include <allegro5/allegro_ttf.h>
+
+extern ALLEGRO_FONT* font;
 
 using namespace std;
 
@@ -47,7 +51,7 @@ static float getPolarCoord(Vector a)
 
 	float out = atan2(a.y, a.x);
 	if (out < 0) {
-		out = 2 * M_PI - out;
+		out = 2 * M_PI + out;
 	}
 	return out;
 }
@@ -78,37 +82,68 @@ static float ccw (Vector p1, Vector p2, Vector p3)
 	return (p2.x - p1.x) * (p3.y - p1.y) - (p2.y - p1.y) * (p3.x - p1.x);
 }
 
+#define SWAP(a, b) {char tmp = a; a = b; b = tmp;}
+
+//Memory unsafe
+static char* itoa(int i)
+{
+	char* out = new char[8];
+	for (int k = 0; k < 8; k++) {
+		out[k] = '\0';
+	}
+	while (i > 0) {
+		int next = i%10;
+		int move = out[0];
+		for (int k = 0; out[k] < 7; k++) {
+			SWAP(move, out[k+1]);
+		}
+		out[0] = next;
+		i /= 10;
+	}
+
+	return out;
+}
+
 std::stack<Vector> Entity::convexHull(void)
 {
 	deque <Entity*>::iterator it;
 	Vector ref;
-	std::stack<Vector> s;
+	std::stack<Vector> vecs;
+	std::stack<float> turns;
+	float thisTurn;
+
+	char label[8];
 
 	sort(ents.begin(), ents.end(), compByY);
 	ref = ents.front()->s;
 	CompPolar origin(ref);
-	sort(ents.begin() + 1, ents.end(), origin);
+	sort(ents.begin(), ents.end(), origin);
 
-	s->push(reference);
-	it = ents.begin() + 1;
-	s->push((*it)->s);
-	it++;
-	while (it != ents.end() - 1) {
-		if (*it == ents[0]) {
-			break;
+	vecs.push(ref);
+	turns.push(-INFINITY);
+
+	it = ents.begin();
+	int i = 0;
+	while (it != ents.end()) {
+		Entity *e = *it;
+		thisTurn = getPolarCoord(e->s - vecs.top());
+		//cout << i << ":\n";
+		sprintf(label, "%d", i++);
+		al_draw_text(font, al_map_rgb(255, 255, 255), e->s.x, e->s.y, ALLEGRO_ALIGN_CENTRE, label);
+		//cout << "thisTurn = " << thisTurn << endl;
+		//cout << "lastTurn = " << turns.top() << endl;
+		while (thisTurn < turns.top()) {
+			vecs.pop();
+			turns.pop();
+			thisTurn = getPolarCoord(e->s - vecs.top());
+			//cout << "thisTurn = " << thisTurn << " *\n";
 		}
-		Vector v = (*it)->s;
-		while (ccw(v, s->peek(), s->peek2()) > 0) {
-			cout << "Removed " << s->peek().x << s->peek().y << endl;
-			s->pop();
-		}
-
-		cout << "Added: " << v.x << " "<< v.y << endl;
-
-		s->push(v);
+		
+		vecs.push(e->s);
+		turns.push(thisTurn);
 		it++;
 	}
-
-	return s;
+	vecs.push(ref);
+	return vecs;
 }
 
