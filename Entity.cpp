@@ -5,13 +5,18 @@
  *      Author: tris
  */
 
+#define _USE_MATH_DEFINES
+
 #include "Entity.h"
+#include <limits>
 #include <algorithm>
 #include <cmath>
 #include <cassert>
 #include <iostream>
 #include <allegro5/allegro_font.h>
 #include <allegro5/allegro_ttf.h>
+
+#define INFINITY (std::numeric_limits<double>::infinity())
 
 extern ALLEGRO_FONT* font;
 
