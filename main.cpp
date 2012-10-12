@@ -1,11 +1,14 @@
-#include <cstdio>
-#include <iostream>
+
 #include <cstdlib>
+#include <cstdio>
+#include <ctime>
+#include <stack>
+#include <sstream>
+
 #include <allegro5/allegro.h>
 #include <allegro5/allegro_primitives.h>
 #include <allegro5/allegro_font.h>
 #include <allegro5/allegro_ttf.h>
-#include <stack>
 
 #include "main.h"
 #include "Bouncer.h"
@@ -133,16 +136,18 @@ static int init(ALLEGRO_DISPLAY **display, ALLEGRO_EVENT_QUEUE **event_queue,
 	return 1;
 }
 
-static void cleanup(ALLEGRO_DISPLAY *display, ALLEGRO_EVENT_QUEUE *event_queue,
-		ALLEGRO_TIMER *timer)
+static void cleanup(ALLEGRO_DISPLAY *display, 
+					ALLEGRO_EVENT_QUEUE *event_queue,
+					ALLEGRO_TIMER *timer)
 {
 	al_destroy_display(display);
 	al_destroy_timer(timer);
 	al_destroy_event_queue(event_queue);
 }
 
-static void run_loop(ALLEGRO_DISPLAY *display, ALLEGRO_EVENT_QUEUE *event_queue,
-		ALLEGRO_TIMER *timer)
+static void run_loop(ALLEGRO_DISPLAY *display, 
+					 ALLEGRO_EVENT_QUEUE *event_queue,
+					 ALLEGRO_TIMER *timer)
 {
 	bool redraw = true;
 	bool doexit = false;
@@ -164,10 +169,18 @@ static void run_loop(ALLEGRO_DISPLAY *display, ALLEGRO_EVENT_QUEUE *event_queue,
 		s.x = rand() % (SCREEN_W - BOUNCER_SIZE);
 		s.y = rand() % (SCREEN_H - BOUNCER_SIZE);
 		Bouncer *b = new Bouncer(bouncer_img, s);
-		b->v.x = (1/2 - (float)rand()/(float)RAND_MAX) * BOUNCER_SPEED; //Random speed between -4 and 4
+        //Random speed between -4 and 4
+		b->v.x = (1/2 - (float)rand()/(float)RAND_MAX) * BOUNCER_SPEED; 
 		b->v.y = (1/2 - (float)rand()/(float)RAND_MAX) * BOUNCER_SPEED;
 		Entity::ents.push_back(b);
 	}
+
+	time_t last_frame = time(NULL);
+	time_t this_frame;
+	int frame_count = 0;
+	char fps_string[16];
+	fps_string[0] = '1';
+	fps_string[1] = '\0';
 
 	al_start_timer(timer);
 	while (!doexit) {
@@ -176,9 +189,12 @@ static void run_loop(ALLEGRO_DISPLAY *display, ALLEGRO_EVENT_QUEUE *event_queue,
 
 		
 		// Every tick
-		if (ev.type == ALLEGRO_EVENT_TIMER) {
+		if (ev.type == ALLEGRO_EVENT_TIMER) 
+		{
 			redraw = true;
-			for (it = Entity::ents.begin(); it != Entity::ents.end(); it++) {
+			for (it = Entity::ents.begin(); 
+				 it != Entity::ents.end(); it++) 
+			{
 				(*it)->step();
 				(*it)->post_step();
 			}
@@ -228,12 +244,14 @@ static void run_loop(ALLEGRO_DISPLAY *display, ALLEGRO_EVENT_QUEUE *event_queue,
 			redraw = false;
 			al_clear_to_color(COLOR_BLACK);
 
-			for (it = Entity::ents.begin(); it != Entity::ents.end(); it++) {
+			for (it = Entity::ents.begin(); 
+				 it != Entity::ents.end(); 
+				 it++) {
 				Entity *e = *it;
-				al_draw_bitmap(e->sprite, e->s.x - e->width/2, e->s.y - e->height/2, 0);
+				al_draw_bitmap(e->sprite, e->s.x - e->width/2, 
+							   e->s.y - e->height/2, 0);
 			}
 
-			//cout << "New Hull" << endl;
 			std::stack<Vector> convex(Entity::convexHull());
 			
 			prev = convex.top();
@@ -241,12 +259,25 @@ static void run_loop(ALLEGRO_DISPLAY *display, ALLEGRO_EVENT_QUEUE *event_queue,
 			curr = convex.top();
 			convex.pop();
 			do {
-				al_draw_line(prev.x, prev.y, curr.x, curr.y, COLOR_PURPLE, 0);
+				al_draw_line(prev.x, prev.y, 
+							 curr.x, curr.y, COLOR_PURPLE, 0);
 				prev = curr;
 				curr = convex.top();
 				convex.pop();
 			} while (!convex.empty());
 		
+			this_frame = time(NULL);
+			
+			if (difftime(this_frame, last_frame) >= 1.0) {
+				sprintf(fps_string, "%d" , frame_count);
+				frame_count = 0;
+				last_frame = this_frame;
+			}
+			frame_count++;
+			
+			al_draw_text(font, al_map_rgb(255, 255, 0), 0, 0,
+						 ALLEGRO_ALIGN_LEFT, fps_string);
+
 			al_flip_display();
 		}
 	}

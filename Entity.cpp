@@ -102,7 +102,6 @@ std::stack<Vector> Entity::convexHull(void)
 	int i = 0;
 	while (it != ents.end()) {
 		Entity *e = *it;
-		thisTurn = getPolarCoord(e->s - vecs.top());
 		//cout << i << ":\n";
 		ss << i++;
 		ss >> label;
@@ -110,6 +109,8 @@ std::stack<Vector> Entity::convexHull(void)
 					 e->s.x, e->s.y, ALLEGRO_ALIGN_CENTRE, label);
 		//cout << "thisTurn = " << thisTurn << endl;
 		//cout << "lastTurn = " << turns.top() << endl;
+
+		thisTurn = getPolarCoord(e->s - vecs.top());
 		while (thisTurn < turns.top()) {
 			vecs.pop();
 			turns.pop();

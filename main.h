@@ -18,7 +18,7 @@
 #define COLOR_BLACK  al_map_rgb(0,0,0)
 #define COLOR_PURPLE al_map_rgb(255,0,255)
 
-const float FPS = 30;
+const float FPS = 60;
 const int SCREEN_W = 640;
 const int SCREEN_H = 480;
 
