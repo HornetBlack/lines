@@ -16,7 +16,7 @@
 class stack;
 
 class Entity {
-	public:
+public:
 
 	static std::deque<Entity*> ents;
 
@@ -31,6 +31,7 @@ class Entity {
 	virtual void step(void);
 	virtual void post_step(void);
 
+	static Vector ref;
 	static std::stack<Vector> convexHull(void);
 };
 

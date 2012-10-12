@@ -15,17 +15,18 @@
 #include <iostream>
 #include <allegro5/allegro_font.h>
 #include <allegro5/allegro_ttf.h>
+#include <sstream>
 
-#define INFINITY (std::numeric_limits<double>::infinity())
+#include "what.h"
 
 extern ALLEGRO_FONT* font;
 
 using namespace std;
 
 deque<Entity*> Entity::ents;
+Vector Entity::ref;
 
-Entity::Entity(ALLEGRO_BITMAP *image, Vector s, float width, float height) :
-		sprite(image), s(s), width(width), height(height)
+Entity::Entity(ALLEGRO_BITMAP *image, Vector s, float width, float height) :sprite(image), s(s), width(width), height(height)
 {
 }
 
@@ -39,6 +40,9 @@ void Entity::step(void)
 }
 void Entity::post_step(void)
 {
+	if (s.y < ref.y) {
+		ref = s;
+	}
 }
 
 // Convex hull stuff
@@ -72,51 +76,18 @@ public:
 	}
 };
 
-/*
-stack::stack(int max): cap(max+1), size(0) {array = new Vector[cap];}
-stack::~stack(void) {}//{delete array;}
-void stack::push(Vector v) {size++; array[size] = v;}
-Vector stack::peek(void) {return array[size];}
-Vector stack::peek2(void){return array[size-1];}
-Vector stack::pop (void) {return array[size--];}
-bool stack::empty(void) {return (size <= 0);}
-*/
-
 static float ccw (Vector p1, Vector p2, Vector p3)
 {
 	return (p2.x - p1.x) * (p3.y - p1.y) - (p2.y - p1.y) * (p3.x - p1.x);
 }
 
-#define SWAP(a, b) {char tmp = a; a = b; b = tmp;}
-
-//Memory unsafe
-static char* itoa(int i)
-{
-	char* out = new char[8];
-	for (int k = 0; k < 8; k++) {
-		out[k] = '\0';
-	}
-	while (i > 0) {
-		int next = i%10;
-		int move = out[0];
-		for (int k = 0; out[k] < 7; k++) {
-			SWAP(move, out[k+1]);
-		}
-		out[0] = next;
-		i /= 10;
-	}
-
-	return out;
-}
-
 std::stack<Vector> Entity::convexHull(void)
 {
 	deque <Entity*>::iterator it;
-	Vector ref;
 	std::stack<Vector> vecs;
 	std::stack<float> turns;
 	float thisTurn;
-
+	stringstream ss;
 	char label[8];
 
 	sort(ents.begin(), ents.end(), compByY);
@@ -133,8 +104,10 @@ std::stack<Vector> Entity::convexHull(void)
 		Entity *e = *it;
 		thisTurn = getPolarCoord(e->s - vecs.top());
 		//cout << i << ":\n";
-		sprintf(label, "%d", i++);
-		al_draw_text(font, al_map_rgb(255, 255, 255), e->s.x, e->s.y, ALLEGRO_ALIGN_CENTRE, label);
+		ss << i++;
+		ss >> label;
+		al_draw_text(font, al_map_rgb(255, 255, 255), 
+					 e->s.x, e->s.y, ALLEGRO_ALIGN_CENTRE, label);
 		//cout << "thisTurn = " << thisTurn << endl;
 		//cout << "lastTurn = " << turns.top() << endl;
 		while (thisTurn < turns.top()) {
